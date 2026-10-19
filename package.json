@@ -1,0 +1,28 @@
+{
+  "name": "@webuildforgood/skill-closed-loop-telemetry",
+  "version": "1.0.0",
+  "description": "Deterministic decision gate for evidence-driven product optimization. Connects consent, measurement validity, outcome metrics, and engineering invariants before code changes.",
+  "type": "module",
+  "main": "./lib/telemetry-engine.mjs",
+  "bin": {
+    "wb4g-telemetry-gate": "./bin/telemetry-gate.mjs"
+  },
+  "scripts": {
+    "test": "node test/telemetry-gate.test.mjs",
+    "gate": "node ./bin/telemetry-gate.mjs"
+  },
+  "keywords": [
+    "ai-agents",
+    "telemetry",
+    "opentelemetry",
+    "product-optimization",
+    "experimentation",
+    "governance",
+    "decision-gates"
+  ],
+  "author": "We Build for Good (webuildforgood.com)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

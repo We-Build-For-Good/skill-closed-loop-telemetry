@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "updated": "2026-10-19",
+  "description": "Example Product Telemetry Registry for Closed-Loop Optimization",
+  "products": {
+    "sample-utility": {
+      "name": "Sample Utility App",
+      "path": ".",
+      "live_url": "https://example.com/app",
+      "consent_gate": {
+        "required": true,
+        "mechanism": "cookie-banner",
+        "cookie_key": "user_analytics_consent",
+        "disallowed_data": ["personal_identity", "passwords", "location_coordinates"]
+      },
+      "telemetry": {
+        "provider": "OpenTelemetry",
+        "measurement_id": "otel-service-sample",
+        "events": [
+          "task_started",
+          "task_completed",
+          "export_generated"
+        ]
+      },
+      "metrics": {
+        "primary_metric": "task_completion_rate",
+        "primary_description": "Percentage of started sessions that successfully reach completion state",
+        "countermetric": "user_frustration_abandonment",
+        "countermetric_description": "Repeated error triggers or bounce within 30 seconds of onboarding",
+        "guardrails": [
+          "zero_unconsented_beacons",
+          "zero_em_dashes_in_copy",
+          "offline_availability"
+        ]
+      },
+      "optimization_method": "deterministic_sensory_audit_and_qualitative_probe"
+    },
+    "sample-quiz": {
+      "name": "Sample Clinical Quiz",
+      "path": ".",
+      "live_url": "https://example.com/quiz",
+      "consent_gate": {
+        "required": true,
+        "mechanism": "strict-opt-in",
+        "disallowed_data": ["patient_records", "hospital_identifiers"]
+      },
+      "telemetry": {
+        "provider": "Google Analytics 4",
+        "measurement_id": "G-SAMPLEQUIZ01",
+        "events": [
+          "quiz_started",
+          "question_answered",
+          "sprint_completed"
+        ]
+      },
+      "metrics": {
+        "primary_metric": "sprint_completion_with_accuracy",
+        "primary_description": "Percentage of 10-question sprints finished with score >= 80%",
+        "countermetric": "rapid_guessing_velocity",
+        "countermetric_description": "Answers submitted in under 3 seconds per clinical question",
+        "guardrails": [
+          "instant_offline_rendering",
+          "factual_question_verification"
+        ]
+      },
+      "optimization_method": "deterministic_question_accuracy_and_sensory_audit"
+    }
+  }
+}
