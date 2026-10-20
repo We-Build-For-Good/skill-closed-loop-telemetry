@@ -1,100 +1,64 @@
 ---
 name: closed-loop-telemetry
-description: Deterministic decision gate for evidence-driven product optimization. Connects user consent, measurement integrity, outcome metrics, and engineering invariants before code changes. Use before proposing or implementing telemetry-driven product optimizations.
+description: Decision gate to run before an agent changes a product because of analytics data. Checks consent, that the measurement ID is really in the code, that a primary metric has a countermetric, whether traffic supports A/B testing, and the repo's code invariants. Use before proposing or making analytics-driven product changes.
 license: MIT
 metadata:
   author: We Build for Good
-  version: "1.0.0"
+  version: "2.0.0"
 ---
 
-# Closed-Loop Telemetry: Evidence-Driven Product Optimization
+# Closed-Loop Telemetry: check before you optimise
 
-Many modern AI growth playbooks suggest an appealing loop: instruct an agent to inspect analytics, pick a number, and run daily 50/50 A/B tests against users to compound growth.
+A popular agent playbook says: give an agent your analytics, let it pick a number, and A/B test a change on half your users every day. On small products this goes wrong in four ways:
 
-In real-world studios and early-stage products, naive automation causes four fatal failures:
-1. **The Sample Size Fallacy**: Splitting modest cohorts (50 to 500 weekly users) produces zero statistical power. Testing daily guarantees chasing random noise.
-2. **The Telemetry Trap**: An agent observing zero conversions cannot tell whether the product is broken, the measurement tag failed, or the product is intentionally marked "In development: not yet for sale".
-3. **Proxy Metric Destruction**: An agent tasked with optimizing puzzle completion rates will make puzzles trivial, driving up the primary metric while destroying user retention.
-4. **Consent Erosion**: Optimizing agents silently enable tracking, session replays, or invasive beacons, violating user dignity and legal privacy boundaries.
+1. **Too little traffic.** With 50 to 500 users a week, a 50/50 split mostly measures noise.
+2. **The telemetry trap.** Zero conversions might mean the product is broken, the tag is missing, or the page says "not yet for sale" on purpose. An agent cannot tell which.
+3. **Proxy metrics.** Optimise puzzle completion alone and the agent makes puzzles trivial.
+4. **Consent erosion.** An optimising agent adds a tracker or session replay without asking users.
 
-The **Closed-Loop Telemetry Engine** establishes an executable 6-gate decision protocol that determines whether an AI agent has valid evidence, verified permission, and sufficient statistical justification before any code change is tested or deployed.
+This skill runs six gates and returns CLEARED, CLEARED_WITH_GAPS or BLOCKED.
 
----
+## The gates
 
-## The 6-Gate Protocol
+All checks are static: they read files in the repo. They do not load the page or watch network traffic.
 
-```
-[Gate 0: Invariant & Consent Check]
-       │
-       ▼
-[Gate 1: Measurement Integrity & Telemetry Trap Check]
-       │
-       ▼
-[Gate 2: Outcome & Guardrail Diagnosis]
-       │
-       ▼
-[Gate 3: Cohort Power & Method Selection]
-       │
-       ▼
-[Gate 4: System Invariants & Sensory Verification]
-       │
-       ▼
-[Gate 5: Controlled Recording & Decision]
-```
+| Gate | What it actually checks |
+| :--- | :--- |
+| 0 Consent | If the registry says consent is required: no HTML file loads a known tracker (Google tag, GA, Plausible, Hotjar, Clarity, Segment, PostHog, Meta pixel) directly, unless Google Consent Mode defaults to denied or the script is held back with `type="text/plain"`; and a consent file exists (`consent_gate.file`, or `consent.js`, `cookie-consent.js` and similar). If the registry says no consent is needed, it fails if a tracker is loaded anyway. |
+| 1 Measurement and trap | Blocks if any HTML file contains "in development", "not yet for sale", "coming soon", "mock data" or "preview only". If a `measurement_id` is registered, it must appear in a source or `.env` file. |
+| 2 Metrics | The registry must name a `primary_metric` and a `countermetric`. Guardrails are listed but not checked. |
+| 3 Method | Uses `metrics.weekly_conversions` if you supply it. Under 1,000 a week (or no figure), it says not to A/B test and names your `optimization_method`. Advisory only; never blocks. |
+| 4 Invariants | Runs `wb4g-invariants --dir <repo>` (from skill-system-invariant-engine, found side by side or on PATH). Violations, a config error or a missing tool all block. |
+| 5 Recording | Writes the full decision to `<output-dir>/<product>-audit.json`. Blocks if it cannot write. |
 
-### Gate 0: Invariant & Consent Check
-* **Requirement:** Explicit user consent must be verified before any analytics, telemetry, or session replay loads.
-* **Invariant:** No session replay of sensitive fields, credentials, or personal notes.
-* **Behavior:** Missing consent mechanisms or unconsented beacons immediately produce `BLOCKED`.
+A check that could not run (no HTML files, `--skip-invariants`, `verify_in_code: false`) is reported as `NOT_CHECKED` and the result is CLEARED_WITH_GAPS. Use `--strict` to make gaps block.
 
-### Gate 1: Measurement Integrity & Telemetry Trap Check
-* **Requirement:** Measurement IDs and event listeners must be active and syntactically valid.
-* **Telemetry Trap Guard:** Scans for markers such as "in development", "coming soon", or "not yet for sale". If detected, zero conversions are recognized as intentional, and autonomous refactoring is blocked.
+This skill does not run the visual audit. Run `wb4g-visual-audit` separately, or use skill-safe-deploy, which runs both.
 
-### Gate 2: Outcome & Guardrail Diagnosis
-* **Requirement:** The product must declare exactly 1 primary mechanical metric (e.g. on-time departure confirmation, sprint completion with accuracy).
-* **Mandatory Countermetric:** Every primary metric must be paired with a countermetric (e.g. frustration bounce, snooze panic) to prevent proxy degradation.
-
-### Gate 3: Cohort Power & Method Selection
-* **Requirement:** Statistical power check based on cohort size.
-* **Policy:** For cohorts under 1,000 conversions per week, frequentist 50/50 A/B testing is prohibited. The engine directs the agent to deterministic quality audits (`skill-visual-sensory-audit`) or qualitative user probes.
-
-### Gate 4: System Invariants & Sensory Verification
-* **Requirement:** Proposed changes must pass code invariants (`wb4g-invariants`: zero em dashes, modular boundaries) and multi-viewport sensory verification (`wb4g-visual-audit`: 375px, 768px, 1440px).
-
-### Gate 5: Controlled Recording & Decision
-* **Requirement:** Complete audit decisions are logged to JSON disk state.
-* **Honesty Policy:** Inconclusive results must be explicitly logged as inconclusive. Never manufacture statistical winners from sparse data.
-
----
-
-## CLI Usage
+## Usage
 
 ```bash
-# Evaluate a product registered in product-registry.json
-wb4g-telemetry-gate --product sample-utility
+# Product whose registry "path" matches the current directory
+wb4g-telemetry-gate
 
-# Pass a custom registry file
-wb4g-telemetry-gate --registry ./my-registry.json --product my-app
+# Named product, explicit registry
+wb4g-telemetry-gate --registry ./product-registry.json --product my-app
 
-# Output raw JSON for agent ingestion
-wb4g-telemetry-gate --product sample-utility --json
-
-# Run on current working directory
-wb4g-telemetry-gate .
+# JSON for agents; block on any gap
+wb4g-telemetry-gate --product my-app --json --strict
 ```
 
----
+The registry is found at `--registry`, then `./product-registry.json`, then `<dir>/product-registry.json`. Product paths are relative to the registry file. If no product matches, the gate stops with exit code 2. It never falls back to another product.
 
-## Exit Codes
+## Exit codes
 
-* `0`: **CLEARED** (All 6 gates passed; optimization method approved).
-* `1`: **BLOCKED** (One or more gates failed; remediation required before code changes).
+* `0`: CLEARED or CLEARED_WITH_GAPS
+* `1`: BLOCKED
+* `2`: bad options, no registry, or no matching product
 
----
+## What this skill does not do
 
-## What This Skill Does Not Do
-
-* It does not guarantee legal compliance under all jurisdictions.
-* It does not guarantee that a chosen metric represents genuine business value.
-* It does not automatically author code refactors; it gates whether refactoring is permitted.
+* It does not prove your consent banner works in a browser, or that you comply with any law.
+* It does not prove your metric reflects real value.
+* It does not calculate statistical power; it applies a fixed threshold you can read in the code.
+* It does not write code changes; it decides whether an agent should make them.

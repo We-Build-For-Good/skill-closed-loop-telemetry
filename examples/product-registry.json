@@ -1,18 +1,22 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "updated": "2026-10-19",
-  "description": "Example Product Telemetry Registry for Closed-Loop Optimization",
+  "description": "Example product registry. Paths are relative to this file. Copy it into your project and edit.",
   "products": {
     "sample-utility": {
       "name": "Sample Utility App",
-      "path": ".",
+      "path": "./sample-utility",
       "live_url": "https://example.com/app",
       "consent_gate": {
         "required": true,
         "mechanism": "cookie-banner",
         "cookie_key": "user_analytics_consent",
-        "disallowed_data": ["personal_identity", "passwords", "location_coordinates"]
+        "disallowed_data": [
+          "personal_identity",
+          "passwords",
+          "location_coordinates"
+        ],
+        "file": "src/consent.js"
       },
       "telemetry": {
         "provider": "OpenTelemetry",
@@ -32,18 +36,22 @@
           "zero_unconsented_beacons",
           "zero_em_dashes_in_copy",
           "offline_availability"
-        ]
+        ],
+        "weekly_conversions": 120
       },
       "optimization_method": "deterministic_sensory_audit_and_qualitative_probe"
     },
     "sample-quiz": {
       "name": "Sample Clinical Quiz",
-      "path": ".",
+      "path": "./sample-quiz",
       "live_url": "https://example.com/quiz",
       "consent_gate": {
         "required": true,
         "mechanism": "strict-opt-in",
-        "disallowed_data": ["patient_records", "hospital_identifiers"]
+        "disallowed_data": [
+          "patient_records",
+          "hospital_identifiers"
+        ]
       },
       "telemetry": {
         "provider": "Google Analytics 4",

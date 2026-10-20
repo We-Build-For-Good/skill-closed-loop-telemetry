@@ -1,14 +1,14 @@
 {
   "name": "@webuildforgood/skill-closed-loop-telemetry",
-  "version": "1.0.0",
-  "description": "Deterministic decision gate for evidence-driven product optimization. Connects consent, measurement validity, outcome metrics, and engineering invariants before code changes.",
+  "version": "2.0.0",
+  "description": "Decision gate that checks consent, measurement, metrics and code invariants before an agent optimises a product from analytics.",
   "type": "module",
   "main": "./lib/telemetry-engine.mjs",
   "bin": {
     "wb4g-telemetry-gate": "./bin/telemetry-gate.mjs"
   },
   "scripts": {
-    "test": "node test/telemetry-gate.test.mjs",
+    "test": "node --test test/telemetry-gate.test.mjs",
     "gate": "node ./bin/telemetry-gate.mjs"
   },
   "keywords": [
